@@ -18,6 +18,7 @@ load_dotenv()
 
 console = Console()
 API_KEY = os.getenv("MALWAREBAZAAR_AUTH_KEY", "").strip()
+print("KEY:", API_KEY)
 VT_API_KEY = os.getenv("VIRUSTOTAL_API_KEY","").strip()
 
 
