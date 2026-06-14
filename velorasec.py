@@ -1,84 +1,99 @@
-import argparse
-import hashlib
-import requests
+#!/usr/bin/env python3
+
 import pyfiglet
+import requests
+import hashlib
+import argparse
 import os
-from datetime import datetime
 
 from dotenv import load_dotenv
 
 from rich.console import Console
 from rich.table import Table
 from rich.text import Text
+from rich import box
+from rich.panel import Panel
 
 load_dotenv()
 
 console = Console()
-
-APP_NAME = "VeloraSec"
-APP_TAGLINE = "Enterprise Threat Intelligence Console"
-APP_DESCRIPTION = "Malware Detection and Threat Analysis System"
-AUTHOR = "Danthoju Sai Vamshi [ V ]"
-GITHUB_URL = "https://github.com/saivamshidanthoju"
-SOURCE_NAME = "MalwareBazaar"
-
-INFO_STYLE = "bold cyan"
-SUCCESS_STYLE = "bold green"
-WARNING_STYLE = "bold yellow"
-ERROR_STYLE = "bold red"
-MUTED_STYLE = "dim white"
+API_KEY = os.getenv("MALWAREBAZAAR_AUTH_KEY", "").strip()
+VT_API_KEY = os.getenv("VIRUSTOTAL_API_KEY","").strip()
 
 
-def current_timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def banner():
+
+    console.print(pyfiglet.figlet_format("Velora   Sec"), style="bold white")
+
+    print("Fast Intelligent Cyber Analysis & Security System.")
+
+    print("\n")
+
+    console.print("#> by Danthoju Sai Vamshi [ V ]", style="bold white")
+
+    console.print("#> https://github.com/saivamshidanthoju", style="bold white")
+
+    print("-" * 40)
+
+    print("\n")
 
 
-def section(title):
-    console.print()
-    console.print(f"[{INFO_STYLE}]:: {title}[/{INFO_STYLE}]")
+def error():
 
-
-def status_line(label, value, style="white"):
-    value = str(value)
-
-    if len(value) > 56:
-        console.print(f"[{MUTED_STYLE}]{label}[/{MUTED_STYLE}]")
-        console.print(f"  [{style}]{value}[/{style}]")
-        return
-
-    console.print(f"[{MUTED_STYLE}]{label:<16}[/{MUTED_STYLE}] [{style}]{value}[/{style}]")
-
-
-def info(message):
-    console.print(f"[{INFO_STYLE}]INFO[/{INFO_STYLE}] {message}")
-
-
-def success(message):
-    console.print(f"[{SUCCESS_STYLE}]OK[/{SUCCESS_STYLE}] {message}")
-
-
-def warning(message):
-    console.print(f"[{WARNING_STYLE}]NOTICE[/{WARNING_STYLE}] {message}")
-
-
-def error(message="Something went wrong."):
-    console.print(f"[{ERROR_STYLE}]ERROR[/{ERROR_STYLE}] {message}")
-
-
-def clean_table(title=None):
-    if title:
-        console.print(Text(title, style="yellow"))
-
-    return Table(
-        show_header=False,
-        box=None,
-        show_edge=False,
-        show_lines=False,
-        pad_edge=False,
+    err_text = Text(
+        "An error has occurred. Please refer to the help below:",
+        style="bold red"
     )
+
+    console.print(err_text)
+
+    print("\n")
+
+    help()
+
+
+def help():
+
+    console.print("[bold yellow]Usage:[/bold yellow]")
+
+    console.print("  velorasec.py [-h] [-f PATH] [-s SIGNATURE] [-o OUTPUT]\n")
+
+    console.print("[bold yellow]Options:[/bold yellow]")
+
+    table = Table(
+        show_header=True,
+        box=box.SIMPLE
+    )
+
+    table.add_column("Option", style="bold cyan")
+
+    table.add_column("Description", style="white")
+
+    table.add_row(
+        "-h, --help",
+        "Show this help message and exit"
+    )
+
+    table.add_row(
+        "-f PATH, --file PATH, --path PATH",
+        "Enter the file path"
+    )
+
+    table.add_row(
+        "-s SIGNATURE, --signature SIGNATURE",
+        "Enter the file signature"
+    )
+
+    table.add_row(
+        "-o OUTPUT, --output OUTPUT",
+        "Output to a file"
+    )
+
+    console.print(table)
 
 
 def normalize_file_path(file_path):
+
     cleaned_path = str(file_path).strip()
 
     while (
@@ -86,389 +101,525 @@ def normalize_file_path(file_path):
         and cleaned_path[0] == cleaned_path[-1]
         and cleaned_path[0] in ("'", '"')
     ):
+
         cleaned_path = cleaned_path[1:-1].strip()
 
     return os.path.abspath(os.path.expanduser(cleaned_path))
 
 
-# ==========================================
-# Banner / Branding
-# ==========================================
+try:
 
-def banner():
+    def output(f_name, data):
 
-    banner_text = pyfiglet.figlet_format("Ve l o ra  Sec")
-
-    console.print(
-        banner_text,
-        style="bold white"
-    )
-
-    console.print(
-        "Malware Detection and Threat Analysis System.",
-        style="bold"
-    )
-
-    print("\n")
-    console.print("#> by Danthoju Sai Vamshi [ V ]", style="bold bright_white")
-    console.print(
-    "#> GitHub: https://github.com/saivamshidanthoju",
-    style="bold bright_white"
-)
-    print("-" * 40)
-    print("\n")
-
-
-
-# ==========================================
-# Generate SHA256 Hash
-# ==========================================
-def calculate_sha256(file_path):
-
-    sha256 = hashlib.sha256()
-
-    try:
-
-        # Clean path
-        clean_path = os.path.abspath(
-            os.path.expanduser(
-                str(file_path).strip().replace('"', '')
-            )
-        )
-
-        print("DEBUG:", repr(clean_path))
-
-        if not os.path.exists(clean_path):
-
-            error("File does not exist.")
-
-            return None
-
-        with open(clean_path, "rb") as file:
-
-            while chunk := file.read(4096):
-
-                sha256.update(chunk)
-
-        return sha256.hexdigest()
-
-    except Exception as e:
-
-        error(f"Unable to read file: {e}")
-
-        return None
-
-# ==========================================
-# MalwareBazaar API Request
-# ==========================================
-def check_malwarebazaar(file_hash):
-
-    url = url = "https://mb-api.abuse.ch/api/v1/"
-
-    payload = {
-        "query": "get_info",
-        "hash": file_hash
-    }
-
-    headers = {
-    "Auth-Key": API_KEY,
-    "User-Agent": "VeloraSec",
-    "Accept": "application/json"
-}
-    try:
-
-        response = requests.post(
-            url,
-            data=payload,
-            headers=headers,
-            timeout=20
-        )
-
-        status_line("HTTP Status", response.status_code, "bright_white")
-
-        if response.status_code != 200:
-
-            return {
-                "error": f"API request failed with status code {response.status_code}",
-                "response": response.text
-            }
+        file_name = f"{f_name}.txt"
 
         try:
 
-            return response.json()
+            with open(file_name, "w", encoding="utf-8") as f:
+
+                f.write(data)
 
         except:
 
-            return {
-                "error": "API did not return valid JSON.",
-                "response": response.text
-            }
+            error()
 
-    except requests.exceptions.RequestException as e:
+    def get_verdicts(json_data):
 
-        return {
-            "error": str(e)
-        }
+        js = json_data
 
-
-def output(f_name, data):
-    file_name = f"{f_name}.txt"
-
-    try:
-        with open(file_name, "w", encoding="utf-8") as file:
-            file.write(data)
-
-        success(f"Report saved to {file_name}")
-
-    except Exception as e:
-        error(f"Unable to save report: {e}")
-
-
-def file_info(json_data, file_hash):
-    js = json_data
-    output_str = ""
-    table = clean_table("Info:")
-    table.add_column(style="bold cyan")
-    table.add_column(style="bright_white")
-
-    for item in js["data"]:
-        info_fields = {
-            "File Name": item.get("file_name", "N/A"),
-            "File Type": item.get("file_type", "N/A"),
-            "File Size": item.get("file_size", "N/A"),
-            "Signature": item.get("signature", "N/A"),
-            "Reporter": item.get("reporter", "N/A"),
-            "First Seen": item.get("first_seen", "N/A"),
-            "SHA256": file_hash,
-        }
-
-        for key, value in info_fields.items():
-            output_str += f"{key}: {value}\n"
-            table.add_row(key, str(value))
-
-        break
-
-    console.print(table)
-    return output_str
-
-
-def get_verdicts(json_data):
-    js = json_data
-    verdicts = dict()
-    output_str = ""
-    table = clean_table("Verdicts (Vendor, Verdict):")
-    table.add_column(style="bold cyan")
-    table.add_column(style="bright_red")
-
-    for item in js["data"]:
-        for vendor in item.get("vendor_intel", {}):
-            details = item.get("vendor_intel", {})[vendor]
-
-            if isinstance(details, dict) and "verdict" in details:
-                verdicts[vendor] = details["verdict"]
-
-            if isinstance(details, dict) and "detection" in details:
-                verdicts[vendor] = details["detection"]
-
-            if isinstance(details, list):
-                for entry in details:
-                    if "verdict" in entry:
-                        verdicts[vendor] = entry["verdict"]
-                    elif "detection" in entry:
-                        verdicts[vendor] = entry["detection"]
-
-    for vendor in verdicts:
-        output_str += f"{vendor.capitalize()}: {str(verdicts[vendor]).capitalize()}\n"
-        table.add_row(vendor.capitalize(), str(verdicts[vendor]).capitalize())
-
-    output_str += "\n"
-    console.print(table)
-    return output_str
-
-
-def get_yara(json_data):
-    js = json_data
-    yara = list()
-    output_str = ""
-    table = clean_table("Yara Rules:")
-    table.add_column(style="bold cyan")
-    table.add_column(style="bright_white")
-
-    for item in js["data"]:
-        for rule in item.get("yara_rules", []):
-            yara.append(rule)
-
-    for rule in yara:
-        for key in rule:
-            output_str += f"{key.capitalize()}: {rule[key]}\n"
-            table.add_row(key.capitalize(), str(rule[key]))
-
-        table.add_row("", "")
-        output_str += "\n"
-
-    console.print(table)
-    return output_str
-
-
-def handle_response(response, o, file_hash):
-    js = response
-
-    section("Scan Target")
-    status_line("SHA256", file_hash, "yellow")
-
-    if js is None:
-        error("No response from API.")
-        return
-
-    if "error" in js:
-        error(js["error"])
-
-        if js.get("response"):
-            status_line("API Response", js["response"], "red")
-
-        if o:
-            output(o, f"Error: {js['error']}\nResponse: {js.get('response', '')}\n")
-
-        return
-
-    if js["query_status"] == "ok":
-        console.print(Text("Malware Detected!", style="bold red"))
-        print("\n")
+        verdicts = dict()
 
         output_str = ""
-        output_str += "Malware detected!\n"
-        output_str += f"{file_info(js, file_hash)}\n"
-        output_str += f"{get_verdicts(js)}\n"
-        output_str += f"{get_yara(js)}\n"
 
-        section("Final Verdict")
-        status_line("Verdict", "MALICIOUS", "bold red")
-        status_line("Source", SOURCE_NAME, "bright_cyan")
+        header = Text(
+            "Verdicts (Vendor, Verdict): ",
+            style="yellow"
+        )
 
-        if o:
-            output(o, output_str)
+        console.print(header)
 
-    else:
-        heading = Text("No malware detected. This file is likely safe.\n", style="bold green")
-        console.print(heading)
-        status_line("Query Status", js.get("query_status"), "yellow")
+        table = Table(
+            show_header=False,
+            box=box.SIMPLE
+        )
 
-        if o:
-            output(o, f"No malware detected.\nQuery Status: {js.get('query_status')}\nHash: {file_hash}\n")
+        table.add_column(style="bold cyan")
 
+        table.add_column(style="bright_red")
 
-def make_post_request(file_hash, o):
-    response = check_malwarebazaar(file_hash)
-    handle_response(response, o, file_hash)
+        for i in js["data"]:
 
+            vendor_intel = i.get("vendor_intel") or {}
 
-def parse():
-    parser = argparse.ArgumentParser(
-        description="VeloraSec - Malware Detection and Threat Analysis System"
-    )
+            for j in vendor_intel:
 
-    parser.add_argument(
-        "-f",
-        "--file",
-        type=str,
-        help="Enter file path to scan"
-    )
+                k = vendor_intel[j]
 
-    parser.add_argument(
-        "-s",
-        "--signature",
-        help="Enter SHA256 hash directly"
-    )
+                if type(k) == dict and "verdict" in k:
 
-    parser.add_argument(
-        "-o",
-        "--output",
-        help="Output to a file"
-    )
+                    verdicts[j] = k["verdict"]
 
-    args = parser.parse_args()
-    f = args.file if args.file else False
-    o = args.output if args.output else False
-    s = args.signature if args.signature else False
-    return f, o, s
+                if type(k) == dict and "detection" in k:
 
+                    verdicts[j] = k["detection"]
 
-def render_scan_context(source_type, source_value, file_hash):
-    section("Scan Context")
-    status_line("Input Type", source_type, "bright_white")
-    status_line("Input Value", source_value, "bright_white")
-    status_line("Source", SOURCE_NAME, "bright_cyan")
-    status_line("Timestamp", current_timestamp(), "bright_white")
-    status_line("SHA256", file_hash, "yellow")
+                if type(k) == list:
 
+                    for l in k:
 
-def main():
-    banner()
+                        if "verdict" in l:
 
-    f, o, s = parse()
+                            verdicts[j] = l["verdict"]
 
-    if f != False or s != False:
-        if f:
-            section("File Hashing")
-            info("Generating SHA256 fingerprint from local file.")
+                        elif "detection" in l:
 
-            file_path = normalize_file_path(f)
-            hash_value = calculate_sha256(file_path)
+                            verdicts[j] = l["detection"]
 
-            if hash_value is None:
+        for i in verdicts:
+
+            output_str += (
+                f"{i.capitalize()}: "
+                f"{str(verdicts[i]).capitalize()}\n"
+            )
+
+            table.add_row(
+                i.capitalize(),
+                str(verdicts[i]).capitalize()
+            )
+
+        output_str += "\n"
+
+        console.print(table)
+
+        return output_str
+
+    def get_yara(json_data):
+
+        js = json_data
+
+        output_str = ""
+
+        data = js["data"][0] if js.get("data") else {}
+
+        # ==========================================
+        # YARA Rules
+        # ==========================================
+        yara_rules = data.get("yara_rules") or []
+
+        if yara_rules:
+
+            yara_table = Table(title="YARA Rule Matches")
+
+            yara_table.add_column(
+                "Rule Name",
+                style="cyan"
+            )
+
+            yara_table.add_column(
+                "Description",
+                style="white"
+            )
+
+            for rule in yara_rules:
+
+                rule_name = str(rule.get("rule_name", "N/A"))
+
+                description = str(rule.get("description", "N/A"))
+
+                yara_table.add_row(
+                    rule_name,
+                    description
+                )
+
+                output_str += (
+                    f"Rule Name: {rule_name}\n"
+                    f"Description: {description}\n\n"
+                )
+
+            console.print(yara_table)
+
+        else:
+
+            console.print("YARA Rules: None\n")
+
+            output_str = "YARA Rules: None\n"
+
+        return output_str
+
+    def file_info(json_data):
+
+        js = json_data
+
+        info = list()
+
+        output_str = ""
+
+        header = Text(
+            "Info: ",
+            style="yellow"
+        )
+
+        console.print(header)
+
+        table = Table(
+            show_header=False,
+            box=box.SIMPLE
+        )
+
+        table.add_column(style="bold cyan")
+
+        table.add_column(style="bright_white")
+
+        for i in js["data"]:
+
+            info.append(i)
+
+            break
+
+        for i in info:
+
+            for s in i:
+
+                if s != "file_information":
+
+                    output_str += (
+                        f"{s.capitalize()}: "
+                        f"{i[s]}\n"
+                    )
+
+                    table.add_row(
+                        s.capitalize(),
+                        str(i[s])
+                    )
+
+                else:
+
+                    break
+
+            break
+
+        console.print(table)
+
+        return output_str
+
+    def handle_response(response, o):
+
+        js = response
+
+        if js["query_status"] == "ok":
+
+            heading = Panel(
+                "[bold red]!!! MALWARE DETECTED !!![/bold red]",
+                border_style="red",
+                expand=False
+            )
+
+            console.print(heading)
+
+            print("\n")
+
+            output_str = ""
+
+            output_str += "Malware detected!\n"
+
+            output_str += f"{file_info(js)}\n"
+
+            output_str += f"{get_verdicts(js)}\n"
+
+            output_str += f"{get_yara(js)}\n"
+
+            if o:
+
+                output(o, output_str)
+
+        else:
+
+            heading = Text(
+                "No malware detected. "
+                "This file is likely safe.\n",
+                style="bold green"
+            )
+
+            console.print(heading)
+
+    def make_post_request(url, data, o):
+
+        if not API_KEY:
+
+            print("Missing MALWAREBAZAAR_AUTH_KEY in .env file.")
+
+            return
+
+        headers = {
+
+            "Auth-Key": API_KEY,
+
+            "User-Agent": "VeloraSec",
+
+            "Accept": "application/json"
+        }
+
+        try:
+
+            response = requests.post(
+                url,
+                data=data,
+                headers=headers,
+                timeout=20
+            )
+
+        except requests.exceptions.RequestException as e:
+
+            print(f"POST request failed: {e}")
+
+            return
+
+        if response.status_code == 200:
+
+            response = response.json()
+
+            handle_response(response, o)
+
+        else:
+
+            print(
+                f"POST request failed "
+                f"with status code: "
+                f"{response.status_code}"
+            )
+
+            print("Response:")
+
+            print(response.text)
+
+    def check_virustotal(file_hash):
+
+        if not VT_API_KEY:
+
+            console.print(
+                "VirusTotal API Key is missing. "
+                "Please set the VIRUSTOTAL_API_KEY in your .env file to enable VirusTotal scanning.",
+                style="bold yellow"
+            )
+
+            return
+
+        url = f"https://www.virustotal.com/api/v3/files/{file_hash}"
+
+        headers = {
+            "x-apikey": VT_API_KEY
+        }
+
+        try:
+
+            response = requests.get(
+                url,
+                headers=headers,
+                timeout=20
+            )
+
+            if response.status_code == 404:
+
+                console.print(
+                    "VirusTotal: Hash not found.",
+                    style="bold yellow"
+                )
+
                 return
 
-            success("SHA256 fingerprint generated.")
-            render_scan_context("File", file_path, hash_value)
+            if response.status_code != 200:
 
-        elif s:
-            hash_value = s
-            section("Signature Input")
+                console.print(
+                    f"VirusTotal API Error: {response.status_code}",
+                    style="bold red"
+                )
 
-            table = clean_table()
-            table.add_column(style="bold cyan")
-            table.add_column(style="bright_white")
-            table.add_row("Hash Entered", hash_value)
+                return
+
+            vt_data = response.json()
+
+            stats = vt_data["data"]["attributes"]["last_analysis_stats"]
+
+            harmless = stats.get("harmless", 0)
+            malicious = stats.get("malicious", 0)
+            suspicious = stats.get("suspicious", 0)
+            undetected = stats.get("undetected", 0)
+
+            table = Table(
+                title="VirusTotal Analysis",
+                box=box.SIMPLE
+            )
+
+            table.add_column("Category", style="bold cyan")
+            table.add_column("Count", style="bright_white")
+
+            table.add_row("Harmless", str(harmless))
+            table.add_row("Malicious", str(malicious))
+            table.add_row("Suspicious", str(suspicious))
+            table.add_row("Undetected", str(undetected))
+
             console.print(table)
 
-            render_scan_context("Signature", s, hash_value)
+            if malicious > 0:
 
-        section("Threat Intelligence Lookup")
+                console.print(
+                    "VirusTotal Verdict: MALICIOUS",
+                    style="bold red"
+                )
 
-        with console.status(
-            "[bold cyan]Querying MalwareBazaar threat intelligence...[/bold cyan]",
-            spinner="line",
-        ):
-            make_post_request(hash_value, o)
+            elif suspicious > 0:
 
-    else:
-        error("Please provide a file path or SHA256 hash.")
+                console.print(
+                    "VirusTotal Verdict: SUSPICIOUS",
+                    style="bold yellow"
+                )
 
-        section("Examples")
+            else:
 
-        console.print(
-            "python velorasec.py -f test.txt",
-            style="bright_white"
+                console.print(
+                    "VirusTotal Verdict: SAFE / UNKNOWN",
+                    style="bold green"
+                )
+
+        except Exception as e:
+
+            console.print(
+                f"VirusTotal Error: {e}",
+                style="bold red"
+            )
+
+    def calculate_file_hash(
+        file_path,
+        hash_algorithm='sha256',
+        chunk_size=8192
+    ):
+
+        hash_obj = hashlib.new(hash_algorithm)
+
+        file_path = normalize_file_path(file_path)
+
+        try:
+
+            with open(file_path, 'rb') as f:
+
+                while True:
+
+                    data = f.read(chunk_size)
+
+                    if not data:
+
+                        break
+
+                    hash_obj.update(data)
+
+        except OSError as e:
+
+            print(f"Unable to read file: {e}")
+
+            return None
+
+        return hash_obj.hexdigest()
+
+    def parse():
+
+        parser = argparse.ArgumentParser(
+            description=(
+                "Velora Sec - "
+                "Fast Intelligent Cyber Analysis & Security System"
+            )
         )
 
-        console.print(
-            "python velorasec.py -s 44d88612fea8a8f36de82e1278abb02f176e6cbba3fe4",
-            style="bright_white"
+        parser.add_argument(
+            "-f",
+            "--file",
+            "--path",
+            nargs=1,
+            dest="path",
+            help="Enter the file path."
         )
 
-        console.print(
-            "python velorasec.py -f test.txt -o report",
-            style="bright_white"
+        parser.add_argument(
+            "-s",
+            "--signature",
+            nargs=1,
+            help="Enter the file signature."
         )
 
+        parser.add_argument(
+            "-o",
+            "--output",
+            nargs=1,
+            help="Output to a file."
+        )
 
-load_dotenv()
+        args = parser.parse_args()
 
-API_KEY = os.getenv("MALWAREBAZAAR_AUTH_KEY")
+        f = args.path[0] if args.path else False
 
-# ==========================================
-# Program Start
-# ==========================================
-if __name__ == "__main__":
+        o = args.output[0] if args.output else False
 
-    main()
+        s = args.signature[0] if args.signature else False
+
+        return f, o, s
+
+    def main():
+
+        banner()
+
+        f, o, s = parse()
+
+        if f != False or s != False:
+
+            if f:
+
+                hash_value = calculate_file_hash(f)
+                print("Generated Hash:", hash_value)
+
+                if hash_value is None:
+
+                    return
+
+            elif s:
+
+                hash_value = s
+
+                table = Table(
+                    show_header=False,
+                    box=box.SIMPLE
+                )
+
+                table.add_column(style="bold cyan")
+
+                table.add_column(style="bright_white")
+
+                table.add_row(
+                    "Hash Entered",
+                    hash_value
+                )
+
+                console.print(table)
+
+            url = "https://mb-api.abuse.ch/api/v1/"
+
+            data = {
+                "query": "get_info",
+                "hash": ""
+            }
+
+            data["hash"] = hash_value
+
+            make_post_request(url, data, o)
+
+            print("\nChecking VirusTotal...\n")
+
+            check_virustotal(hash_value)
+
+        else:
+
+            error()
+
+except Exception as e:
+
+    error()
+
+main()
