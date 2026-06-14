@@ -4,8 +4,6 @@ VeloraSec is an open-source Command Line Interface (CLI) cybersecurity tool deve
 
 VeloraSec provides detailed threat intelligence information including malware signatures, vendor verdicts, YARA rule matches, file metadata, and VirusTotal detection statistics. The tool is designed for cybersecurity students, SOC analysts, malware researchers, and threat intelligence workflows.
 
-![VeloraSec Banner](https://i.imgur.com/rlk6bS2.png)
-
 ---
 
 # Features
