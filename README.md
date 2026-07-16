@@ -1,212 +1,91 @@
-# VeloraSec - Malware Detection and Threat Intelligence System
+# VeloraSec - Malware Detection & Threat Intelligence System
 
-VeloraSec is an open-source Command Line Interface (CLI) cybersecurity tool developed in Python for detecting and analyzing malicious files using multi-source threat intelligence platforms. The system performs SHA256 hash-based malware analysis by integrating MalwareBazaar and VirusTotal APIs to identify potentially harmful files quickly and efficiently.
+VeloraSec is an open-source Python CLI tool for malware detection and threat intelligence. It analyzes files using **SHA256 hashing**, **MalwareBazaar**, and **VirusTotal** APIs to identify known malicious files and display detailed threat intelligence.
 
-VeloraSec provides detailed threat intelligence information including malware signatures, vendor verdicts, YARA rule matches, file metadata, and VirusTotal detection statistics. The tool is designed for cybersecurity students, SOC analysts, malware researchers, and threat intelligence workflows.
+## Features
 
----
+* SHA256 file hashing
+* MalwareBazaar integration
+* VirusTotal integration
+* YARA rule matching
+* Vendor verdicts
+* File metadata analysis
+* SHA256 hash lookup
+* Export results to a text file
 
-# Features
-
-* Generate SHA256 hashes from local files
-* Analyze files using MalwareBazaar threat intelligence
-* Integrate VirusTotal multi-engine malware scanning
-* Display malware signatures and file metadata
-* Show YARA rule matches for malware classification
-* Display vendor verdicts and threat intelligence results
-* Support direct SHA256 hash analysis
-* Export analysis results to text files
-* CLI-based lightweight malware analysis workflow
-* Supports multiple file formats:
-
-  * `.exe`
-  * `.pdf`
-  * `.txt`
-  * `.js`
-  * `.png`
-  * `.zip`
-  * `.docx`
-  * and more
-
----
-
-# Technologies Used
+## Technologies
 
 * Python
 * MalwareBazaar API
 * VirusTotal API
-* SHA256 Hashing
-* Requests Library
-* Rich CLI UI
-* Pyfiglet
+* SHA256
+* Rich
+* Requests
+* python-dotenv
 
----
-
-# Installation
-
-Before installing VeloraSec, ensure Python 3 and pip are installed.
-
-## Clone Repository
+## Installation
 
 ```bash
 git clone https://github.com/saivamshidanthoju/VeloraSec.git
 cd VeloraSec
-```
-
-## Install Dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
----
+## Environment Variables
 
-# Environment Variables
-
-Create a `.env` file inside the project folder.
+Create a `.env` file:
 
 ```env
-MALWAREBAZAAR_AUTH_KEY=your_malwarebazaar_api_key
-VIRUSTOTAL_API_KEY=your_virustotal_api_key
+MALWAREBAZAAR_AUTH_KEY=your_api_key
+VIRUSTOTAL_API_KEY=your_api_key
 ```
 
-Without these API keys, malware intelligence scanning will not work.
+## Usage
 
----
-
-# Usage
-
-Run the tool using Python:
-
-```bash
-python velorasec.py [OPTIONS]
-```
-
----
-
-<img width="2048" height="6012" alt="OutputVeloraSec" src="https://github.com/user-attachments/assets/a872d476-5655-41c1-a3d5-cd5ed4501a4b" />
-
-
-# Command Line Options
-
-| Option                   | Description               |
-| ------------------------ | ------------------------- |
-| `-h`, `--help`           | Display help message      |
-| `-f`, `--file`, `--path` | Scan local file           |
-| `-s`, `--signature`      | Scan SHA256 hash directly |
-| `-o`, `--output`         | Save output to text file  |
-
----
-
-# Examples
-
-## Analyze Local File
+Analyze a file:
 
 ```bash
 python velorasec.py -f sample.exe
 ```
 
-## Analyze SHA256 Hash
+Analyze a SHA256 hash:
 
 ```bash
-python velorasec.py -s 87a54f9ce22e98c0cb1972b0991367cd1152148d7fc0106dd9c62fa7094ce5b0
+python velorasec.py -s <SHA256_HASH>
 ```
 
-## Save Report
+Save the output:
 
 ```bash
-python velorasec.py -f malware.exe -o report
+python velorasec.py -f sample.exe -o report.txt
 ```
 
----
+## Command Line Options
 
-# Example Output
+| Option | Description            |
+| ------ | ---------------------- |
+| `-h`   | Show help              |
+| `-f`   | Scan a local file      |
+| `-s`   | Scan a SHA256 hash     |
+| `-o`   | Save results to a file |
 
-VeloraSec provides:
+## Screenshot
 
-* SHA256 hash
-* Malware family
-* File metadata
-* Vendor verdicts
-* YARA rule matches
-* VirusTotal malicious detection counts
-* Threat intelligence summary
+*(Add your terminal output screenshot here.)*
 
-Example:
+## Future Improvements
 
-```text
-MALWARE DETECTED
+* Web dashboard
+* PDF reports
+* Threat scoring
+* Docker support
+* URL/IP reputation analysis
+* Sandbox integration
 
-Signature: Mirai
-File Type: ELF
-VirusTotal: 32 malicious detections
-YARA Matches: Mirai Botnet Malware
-```
+## Disclaimer
 
----
+VeloraSec is intended for educational and research purposes only. Always analyze suspicious files in a secure and isolated environment.
 
-# Limitations
+## License
 
-While VeloraSec provides efficient malware analysis capabilities, there are some limitations:
-
-* **Hash-Based Detection:** Detection depends on known malware hashes already indexed in threat intelligence databases.
-* **Database Dependency:** Results rely on MalwareBazaar and VirusTotal intelligence availability.
-* **Potential False Positives/Negatives:** Malware detection systems may occasionally produce inaccurate results.
-* **Static Analysis:** VeloraSec focuses on static threat intelligence and does not perform dynamic behavioral analysis.
-* **API Rate Limits:** Free API plans may have request limitations.
-
----
-
-# Future Scope
-
-VeloraSec can be expanded into a larger cybersecurity platform with features such as:
-
-* Web dashboard integration
-* Real-time file monitoring
-* PDF report generation
-* URL/IP/domain reputation analysis
-* Docker container support
-* Threat scoring system
-* Cloud deployment
-* SIEM integration
-* Machine learning-based malware classification
-* Sandbox behavior analysis
-
----
-
-# Applications
-
-* SOC Analyst workflows
-* Malware analysis labs
-* Threat intelligence enrichment
-* Incident response
-* Security research
-* Cybersecurity education
-* IOC investigation
-
----
-
-# Acknowledgments
-
-VeloraSec was inspired by open-source cybersecurity intelligence tools and enhanced with additional threat intelligence integrations and advanced malware analysis capabilities.
-
-Developed by:
-
-**Danthoju Sai Vamshi [ V ]**
-
-GitHub:
-https://github.com/saivamshidanthoju
-
----
-
-# Disclaimer
-
-VeloraSec is developed strictly for educational and research purposes only. Users are responsible for complying with all applicable cybersecurity laws and regulations. The developer is not responsible for misuse of this software.
-
-Always handle suspicious or malicious files in isolated and secure environments.
-
----
-
-# License
-
-This project is released under the MIT License.
+MIT License
