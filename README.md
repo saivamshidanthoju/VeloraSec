@@ -97,6 +97,8 @@ VeloraSec is intended for *educational and research purposes only*. Always analy
 
 We built *VeloraSec* as an open-source cybersecurity project to help security enthusiasts, students, and researchers perform malware detection and threat intelligence using Python, MalwareBazaar, VirusTotal, and YARA.
 
+Documentation and setup instructions improved for easier project usage
+
 ## License
 
 This project is licensed under the *MIT License*.
