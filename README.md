@@ -8,7 +8,6 @@ VeloraSec is an open-source Python CLI tool for malware detection and threat int
 - MalwareBazaar integration
 - VirusTotal integration
 - YARA rule matching
-- Vendor verdicts
 - File metadata analysis
 - SHA256 hash lookup
 - Export results to a text file
@@ -19,8 +18,6 @@ VeloraSec is an open-source Python CLI tool for malware detection and threat int
 - MalwareBazaar API
 - VirusTotal API
 - SHA256
-- Rich
-- Requests
 - python-dotenv
 
 ## Installation
@@ -69,9 +66,6 @@ python velorasec.py -f sample.exe -o report.txt
 | -s | Scan a SHA256 hash |
 | -o | Save results to a file |
 
-## Screenshot
-
-> *Add your terminal output screenshot here.*
 
 ## Future Improvements
 
